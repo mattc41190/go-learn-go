@@ -5,7 +5,7 @@
 
 ## Introduction
 
-Welcome to `go-learn-go`/`udemy-course`. Here you will find a collection of GoLang projects that introduce newcomers to GoLang to basic langauge concepts.
+Welcome to `go-learn-go`/`udemy-course`. Here you will find a collection of GoLang projects that introduce newcomers to GoLang basic langauge concepts.
 
 ## Basic Instrcutions
 
