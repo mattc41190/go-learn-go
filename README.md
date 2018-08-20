@@ -17,7 +17,7 @@ This repository is a collection of tutoiral projects that are set up in the foll
 
 To learn GoLang
 
-## How does I use this?
+## How do I use this?
 
 - `git clone <this-repo> # To your $GOPATH`
 - `cd <this-repo>/project/of/interest`
