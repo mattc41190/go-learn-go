@@ -29,5 +29,5 @@ The easiest way to use this application is simply by cloning it to your `$GOPATH
 - `go run main.go`
 ## Other Resources:
 
-[Scope Issue Ref One](http://oyvindsk.com/writing/common-golang-mistakes-1)
-[Scope Issue Ref Two](http://devs.cloudimmunity.com/gotchas-and-common-mistakes-in-go-golang/index.html#closure_for_it_vars)
+- [Scope Issue Ref One](http://oyvindsk.com/writing/common-golang-mistakes-1)
+- [Scope Issue Ref Two](http://devs.cloudimmunity.com/gotchas-and-common-mistakes-in-go-golang/index.html#closure_for_it_vars)
