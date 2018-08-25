@@ -9,7 +9,7 @@ This repository is a collection of tutoiral projects that are set up in the foll
 
 - Each primary entity is a folder
   - Example: If I read a book entitled: GoLang Cookbook there would be a root level entry entitled: `golang-cookbook`. `golang-cookbook` would be refered to as a primary entity in the context of this README.
-- Each primary entity will contain a README and a collection of project folders
+- Each primary entity will contain a README.
   - The README at the top of the primary entity folder will describe what the project is dealing with and how a user ought to go about interacting with the project(s) housed there.
   - The projects will always be runnable GoLang applications unless otherwise stated and explained.
 
