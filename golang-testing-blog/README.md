@@ -6,5 +6,6 @@ This repo is a collection of insights gleaned from two blogs posts by (Alex Elli
 
 ## Resources: 
 
-https://blog.alexellis.io/golang-writing-unit-tests/
-https://nathanleclaire.com/blog/2015/10/10/interfaces-and-composition-for-effective-unit-testing-in-golang/
+- https://blog.alexellis.io/golang-writing-unit-tests/
+
+- https://nathanleclaire.com/blog/2015/10/10/interfaces-and-composition-for-effective-unit-testing-in-golang/
