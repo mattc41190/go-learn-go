@@ -1,4 +1,4 @@
-![Gophers-Learn-Testing](gophers-ok-no.png)
+![Gophers-Learn-Testing](gopher-ok-no.png)
 
 # golang-testing-blog
 
