@@ -6,3 +6,5 @@
 - [Slices in GoLang](https://blog.golang.org/go-slices-usage-and-internals)
 - [GoLang Spec in Pieces](https://medium.com/golangspec)
 - [Basic Unit Tests in Go](https://blog.alexellis.io/golang-writing-unit-tests/)
+- [Gophercises](https://gophercises.com/)
+- [Calhoun.io](https://www.calhoun.io/)
