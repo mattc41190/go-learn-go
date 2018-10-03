@@ -6,12 +6,12 @@ import (
 	"github.com/go-kit/kit/log"
 )
 
-type middlewareLogging struct {
+type loggingMiddleware struct {
 	logger log.Logger
 	next   StringService
 }
 
-func (mw middlewareLogging) Uppercase(s string) (output string, err error) {
+func (mw loggingMiddleware) Uppercase(s string) (output string, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "uppercase",
@@ -25,7 +25,7 @@ func (mw middlewareLogging) Uppercase(s string) (output string, err error) {
 	return
 }
 
-func (mw middlewareLogging) Count(s string) (output int) {
+func (mw loggingMiddleware) Count(s string) (output int) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "count",

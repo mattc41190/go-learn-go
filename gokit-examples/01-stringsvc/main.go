@@ -1,29 +1,16 @@
 package main
 
 import (
-	"context"
 	"net/http"
 	"os"
 
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/go-kit/kit/endpoint"
-
 	"github.com/go-kit/kit/log"
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	httptransport "github.com/go-kit/kit/transport/http"
 )
-
-func loggingMiddleware(logger log.Logger) Middleware {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(_ context.Context, request interface{}) (interface{}, error) {
-			logger.Log("msg", "calling endpoint")
-			defer logger.Log("msg", "endpoint called")
-			return next(request, nil)
-		}
-	}
-}
 
 func main() {
 
@@ -52,10 +39,8 @@ func main() {
 		Help:      "The result of each count method.",
 	}, []string{})
 
-	svc := stringService{}
-
-	// TODO: Make these middleware work for real
-	// TODO: Reread the example explanations
+	var svc StringService
+	svc = stringService{}
 	svc = loggingMiddleware{logger, svc}
 	svc = instrumentingMiddleware{requestCount, requestLatency, countResult, svc}
 
