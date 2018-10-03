@@ -2,53 +2,62 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"log"
 	"net/http"
+	"os"
+
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/go-kit/kit/endpoint"
+
+	"github.com/go-kit/kit/log"
+	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
-type uppercaseRequest struct {
-	S string `json:"s"`
-}
-
-type uppercaseResponse struct {
-	V   string `json:"v"`
-	Err string `json:"err,omitempty"` // JSON: "What is Err? It string!"
-}
-
-type countRequest struct {
-	S string `json:"s"`
-}
-
-type countResponse struct {
-	V int `json:"v"`
-}
-
-func makeUppercaseEndpoint(svc StringService) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(uppercaseRequest)
-		v, err := svc.Uppercase(ctx, req.S)
-		if err != nil {
-			return uppercaseResponse{v, err.Error()}, nil
+func loggingMiddleware(logger log.Logger) Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(_ context.Context, request interface{}) (interface{}, error) {
+			logger.Log("msg", "calling endpoint")
+			defer logger.Log("msg", "endpoint called")
+			return next(request, nil)
 		}
-		return uppercaseResponse{v, ""}, nil
-	}
-}
-
-func makeCountEndpoint(svc StringService) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(countRequest)
-		v := svc.Count(ctx, req.S)
-		return countResponse{v}, nil
 	}
 }
 
 func main() {
 
+	logger := log.NewLogfmtLogger(os.Stderr)
+
+	fieldkeys := []string{"method", "error"}
+
+	requestCount := kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Namespace: "my_group",
+		Subsystem: "string_service",
+		Name:      "request_count",
+		Help:      "Number of requests received.",
+	}, fieldkeys)
+
+	requestLatency := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
+		Namespace: "my_group",
+		Subsystem: "string_service",
+		Name:      "request_latency_microseconds",
+		Help:      "Total duration of requests in microseconds.",
+	}, fieldkeys)
+
+	countResult := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
+		Namespace: "my_group",
+		Subsystem: "string_service",
+		Name:      "count_result",
+		Help:      "The result of each count method.",
+	}, []string{})
+
 	svc := stringService{}
+
+	// TODO: Make these middleware work for real
+	// TODO: Reread the example explanations
+	svc = loggingMiddleware{logger, svc}
+	svc = instrumentingMiddleware{requestCount, requestLatency, countResult, svc}
 
 	uppercaseHandler := httptransport.NewServer(
 		makeUppercaseEndpoint(svc),
@@ -64,25 +73,7 @@ func main() {
 
 	http.Handle("/uppercase", uppercaseHandler)
 	http.Handle("/count", countHandler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func decodeUppercaseRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var request uppercaseRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, err
-	}
-	return request, nil
-}
-
-func decodeCountRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var request countRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		return nil, err
-	}
-	return request, nil
-}
-
-func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
-	return json.NewEncoder(w).Encode(response)
+	http.Handle("/metrics", promhttp.Handler())
+	logger.Log("msg", "HTTP", "addr", ":8080")
+	http.ListenAndServe(":8080", nil)
 }
