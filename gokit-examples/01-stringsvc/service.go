@@ -26,3 +26,6 @@ func (stringService) Count(s string) int {
 
 // ErrEmpty is returned when input string is empty
 var ErrEmpty = errors.New("Empty String")
+
+// ServiceMiddleware type is a func which decorates the service being passed in
+type ServiceMiddleware func(StringService) StringService

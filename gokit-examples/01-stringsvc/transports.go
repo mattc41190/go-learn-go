@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -62,4 +64,15 @@ func decodeCountRequest(_ context.Context, r *http.Request) (interface{}, error)
 
 func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
 	return json.NewEncoder(w).Encode(response)
+}
+
+func encodeRequest(_ context.Context, r *http.Request, request interface{}) error {
+	// In place manipulation of the request
+	var buf bytes.Buffer
+	// Declare a var of type bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(r.Body); err != nil {
+		return err
+	}
+	r.Body = ioutil.NopCloser(&buf)
+	return nil
 }
