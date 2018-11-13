@@ -142,14 +142,14 @@ func (e Endpoints) GetProfile(ctx context.Context, ID string) (Profile, error) {
 
 // PutProfile is a function which takes a Context, an ID, and a Profile and returns an error.
 // It will call a server endpoint which "puts" or replaces an exsiting profile
-func (e Endpoints) PutProfile(ctx context.Context, id string, p Profile) error {
+func (e Endpoints) PutProfile(ctx context.Context, profileID string, p Profile) error {
 
 	// Create a request value based on the arguements passed in by the caller. Note, that this value
 	// once sent over the wire will be decoded as the the required arguments to the service, so it may be a good idea to
 	// make the request a type which is capable of being parsed as the sort of value which matches the Service interface function's
 	// required signature ¯\_(ツ)_/¯. Another option is to have the server side decoder inspect and conditionally decorate the request
 	// so that it maybe decoded as the Service expected type.
-	request := putProfileRequest{ID: id, Profile: Profile}
+	request := putProfileRequest{ProfileID: profileID, Profile: Profile}
 
 	// On the endpoints struct (the same one as the receiver for this function, no less) call the PutProfileEndpoint function.
 	// The function will make an HTTP request to a running instance of this service and use the same GoLang native values on both Server and
@@ -173,10 +173,10 @@ func (e Endpoints) PutProfile(ctx context.Context, id string, p Profile) error {
 // PatchProfile is a function which takes a Context, an ID, and a Profile and returns an error
 // PatchProfile differs slightly in implementation from PutProfile by selectively replacing data on the existing strcuture.
 // It will call a server endpoint which "patches" or updates a profile in the datastore.
-func (e Endpoints) PatchProfile(ctx context.Context, id string, p Profile) error {
+func (e Endpoints) PatchProfile(ctx context.Context, profileID string, p Profile) error {
 
 	// TODO: Create detailed ref spec
-	request := patchProfileRequest{ID: id, Profile: Profile}
+	request := patchProfileRequest{ProfileID: profileID, Profile: Profile}
 
 	response, err := e.PatchProfileEndpoint(ctx, request)
 
@@ -191,10 +191,10 @@ func (e Endpoints) PatchProfile(ctx context.Context, id string, p Profile) error
 
 // DeleteProfile is a function which takes a Context and an ID string and returns an error.
 // It will call a server endpoint which deletes a Profile from the datastore.
-func (e Endpoints) DeleteProfile(ctx context.Context, id string) error {
+func (e Endpoints) DeleteProfile(ctx context.Context, profileID string) error {
 
 	// TODO: Create detailed ref spec
-	request := deleteProfileRequest{ID: id}
+	request := deleteProfileRequest{ProfileID: profileID}
 
 	response, err := e.DeleteProfileEndpoint(ctx, request)
 
@@ -330,7 +330,7 @@ func MakePatchProfileEndpoint(s Service) endpoint.Endpoint {
 func MakeDeleteProfileEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteProfileRequest)
-		e := s.DeleteProfile(ctx, req.ID)
+		e := s.DeleteProfile(ctx, req.ProfileID)
 		return deleteProfileResponse{Err: e}
 	}
 }
@@ -391,7 +391,7 @@ type postProfileResponse struct {
 }
 
 type getProfileRequest struct {
-	ID string
+	ProfileID string
 }
 
 type getProfileResponse struct {
@@ -400,8 +400,8 @@ type getProfileResponse struct {
 }
 
 type putProfileRequest struct {
-	ID      string
-	Profile Profile
+	ProfileID string
+	Profile   Profile
 }
 
 type putProfileResponse struct {
@@ -409,8 +409,8 @@ type putProfileResponse struct {
 }
 
 type patchProfileRequest struct {
-	ID      string
-	Profile Profile
+	ProfileID string
+	Profile   Profile
 }
 
 type patchProfileResponse struct {
@@ -418,7 +418,7 @@ type patchProfileResponse struct {
 }
 
 type deleteProfileRequest struct {
-	ID string
+	ProfileID string
 }
 
 type deleteProfileResponse struct {
