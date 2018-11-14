@@ -75,8 +75,8 @@ func MakeClientEndpoints(instance string) (Endpoints, error) {
 	return Endpoints{
 		PostProfileEndpoint:   httptransport.NewClient("POST", tgt, encReqPostProfile, decRespPostProfile, options...).Endpoint(),
 		GetProfileEndpoint:    httptransport.NewClient("GET", tgt, encReqGetProfile, decRespGetProfile, options...).Endpoint(),
-		PutProfileEndpoint:    httptransport.NewClient("PUT", tgt, endReqPutProfile, decRespPutProfile, options...).Endpoint(),
-		PatchProfileEndpoint:  httptransport.NewClient("PATCH", tgt, endReqPathProfile, decRespPathProfile, options...).Endpoint(),
+		PutProfileEndpoint:    httptransport.NewClient("PUT", tgt, encReqPutProfile, decRespPutProfile, options...).Endpoint(),
+		PatchProfileEndpoint:  httptransport.NewClient("PATCH", tgt, encReqPatchProfile, decRespPatchProfile, options...).Endpoint(),
 		DeleteProfileEndpoint: httptransport.NewClient("DELETE", tgt, encReqDeleteProfile, decRespDeleteProfile, options...).Endpoint(),
 		GetAddressesEndpoint:  httptransport.NewClient("GET", tgt, encReqGetAddresses, decRespGetAddresses, options...).Endpoint(),
 		GetAddressEndpoint:    httptransport.NewClient("GET", tgt, encReqGetAddress, decRespGetAddress, options...).Endpoint(),
@@ -118,7 +118,7 @@ func (e Endpoints) PostProfile(ctx context.Context, p Profile) error {
 func (e Endpoints) GetProfile(ctx context.Context, ID string) (Profile, error) {
 
 	// Initialize a variable of type GetProfileRequest and set its ID field to the ID value passed to the function
-	request := getProfileRequest{ID: ID}
+	request := getProfileRequest{ProfileID: ID}
 
 	// Initialize two variable made by calling `e`'s GetProfileEndpoint field value.
 	// This function will return a response value of type interface{} and an error
@@ -149,7 +149,7 @@ func (e Endpoints) PutProfile(ctx context.Context, profileID string, p Profile) 
 	// make the request a type which is capable of being parsed as the sort of value which matches the Service interface function's
 	// required signature ¯\_(ツ)_/¯. Another option is to have the server side decoder inspect and conditionally decorate the request
 	// so that it maybe decoded as the Service expected type.
-	request := putProfileRequest{ProfileID: profileID, Profile: Profile}
+	request := putProfileRequest{ProfileID: profileID, Profile: p}
 
 	// On the endpoints struct (the same one as the receiver for this function, no less) call the PutProfileEndpoint function.
 	// The function will make an HTTP request to a running instance of this service and use the same GoLang native values on both Server and
@@ -160,7 +160,7 @@ func (e Endpoints) PutProfile(ctx context.Context, profileID string, p Profile) 
 	if err != nil {
 
 		// Return the Endpoint call level error to the caller.
-		err
+		return err
 	}
 
 	// Assert that the response server hold a concrete value of `putProfileResponse`
@@ -176,12 +176,12 @@ func (e Endpoints) PutProfile(ctx context.Context, profileID string, p Profile) 
 func (e Endpoints) PatchProfile(ctx context.Context, profileID string, p Profile) error {
 
 	// TODO: Create detailed ref spec
-	request := patchProfileRequest{ProfileID: profileID, Profile: Profile}
+	request := patchProfileRequest{ProfileID: profileID, Profile: p}
 
 	response, err := e.PatchProfileEndpoint(ctx, request)
 
 	if err != nil {
-		err
+		return err
 	}
 
 	resp := response.(patchProfileResponse)
@@ -199,7 +199,7 @@ func (e Endpoints) DeleteProfile(ctx context.Context, profileID string) error {
 	response, err := e.DeleteProfileEndpoint(ctx, request)
 
 	if err != nil {
-		err
+		return err
 	}
 
 	resp := response.(deleteProfileResponse)
@@ -208,7 +208,7 @@ func (e Endpoints) DeleteProfile(ctx context.Context, profileID string) error {
 }
 
 // GetAddresses is a function which accepts a Context and a profileID string and returns a slice of Address and an error.
-// It will call a server endpoint which returns a slice of addresses from the datastore.
+// It will call a server endpoint which returns a slice of addresses from the datastore. Client func.
 func (e Endpoints) GetAddresses(ctx context.Context, profileID string) ([]Address, error) {
 
 	// TODO: Create detailed ref spec
@@ -218,7 +218,7 @@ func (e Endpoints) GetAddresses(ctx context.Context, profileID string) ([]Addres
 
 	resp := response.(getAddressesResponse)
 
-	return resp.Addesses, resp.Err
+	return resp.Addresses, resp.Err
 
 }
 
@@ -241,7 +241,7 @@ func (e Endpoints) GetAddress(ctx context.Context, profileID string, addressID s
 }
 
 // PostAddress is function which accepts a Context, a profileID, an Address.
-// It will call an endpoint function which makes a request to an endpoint server.
+// It will call an endpoint function which makes a request to an endpoint server. Client func.
 func (e Endpoints) PostAddress(ctx context.Context, profileID string, a Address) error {
 
 	// TODO: Create detailed ref spec
@@ -250,10 +250,10 @@ func (e Endpoints) PostAddress(ctx context.Context, profileID string, a Address)
 	response, err := e.PostAddressEndpoint(ctx, request)
 
 	if err != nil {
-		return Address{}, error
+		return err
 	}
 
-	return resp.Err
+	return err
 }
 
 // DeleteAddress is a function that accepts a Context, a profileID string, and an addressID string.
@@ -352,8 +352,8 @@ func MakeGetAddressEndpoint(s Service) endpoint.Endpoint {
 	// TODO: Create detailed ref spec
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getAddressRequest)
-		a, e := s.GetAddress(ctx, req.ProfileID, req.AddressID)
-		return getAddressesResponse
+		addr, e := s.GetAddress(ctx, req.ProfileID, req.AddressID)
+		return getAddressResponse{Err: e, Address: addr}, nil
 	}
 }
 
@@ -440,6 +440,7 @@ type getAddressRequest struct {
 }
 
 type getAddressResponse struct {
+	Err     error   `json:"err,omitempty"`
 	Address Address `json:"address,omitempty"`
 }
 

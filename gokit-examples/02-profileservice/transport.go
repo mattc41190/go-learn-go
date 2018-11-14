@@ -375,6 +375,86 @@ func encReqDeleteAddress(ctx context.Context, req *http.Request, request interfa
 	return encodeJSONRequest(ctx, req, request)
 }
 
+//
+// Client Response Decoders
+// The following decoders will accept a raw http response message (`bytes.Buffer`) and decode it into a known and usable type.
+// Basically all of the decoders are the same...
+//
+
+// decRespPostProfile accepts a context, and a http.Response value. It returns an interface and error.
+// It's return value should be assertable as a postProfileResponse value. This occurs directly before the client's
+// endpoint function does a final clean up of the final value to return to the originator.
+func decRespPostProfile(ctx context.Context, resp *http.Response) (interface{}, error) {
+	var response postProfileResponse
+	err := json.NewDecoder(resp).Decode(&response)
+	return response, err
+}
+
+func decRespGetProfile(ctx context.Context, resp *http.Response) (interface{}, error) {
+	var response getProfileResponse
+	err := json.NewDecoder(resp).Decode(&response)
+	return response, err
+}
+
+func decRespPutProfile(ctx context.Context, resp *http.Response) (interface{}, error) {
+	var response putProfileResponse
+	err := json.NewDecoder(resp).Decode(&response)
+	return response, err
+}
+
+func decRespPatchProfile(ctx context.Context, resp *http.Response) (interface{}, error) {
+	var response patchProfileResponse
+	err := json.NewDecoder(resp).Decode(&response)
+	return response, err
+}
+
+func decRespDeleteProfile(ctx context.Context, resp *http.Response) (interface{}, error) {
+	var response deleteProfileResponse
+	err := json.NewDecoder(resp).Decode(&response)
+	return response, err
+}
+
+func decRespGetAddresses(ctx context.Context, resp *http.Response) (interface{}, error) {
+	// Create an empty value of type getAddressesResponse
+	var response getAddressesResponse
+
+	// Create a `decoder` which uses `resp` as a "source" of information.
+	decoder := json.NewDecoder(resp)
+
+	// Create an error variable which is the result of attempting to decode the information stored in the decoder to
+	// the `response` variable.
+	err := decoder.Decode(&response)
+
+	// Return the response var and any error value created during the decoding process.
+	return response, err
+}
+
+func decRespGetAddress(ctx context.Context, resp *http.Response) (interface{}, error) {
+	var response getAddressResponse
+	err := json.NewDecoder(resp).Decode(&response)
+	return response, err
+}
+
+func decRespPostAddress(ctx context.Context, resp *http.Response) (interface{}, error) {
+	var response postAddressResponse
+	err := json.NewDecoder(resp).Decode(&response)
+	return response, err
+}
+
+func decRespDeleteAddress(ctx context.Context, resp *http.Response) (interface{}, error) {
+	var response deleteAddressResponse
+	err := json.NewDecoder(resp).Decode(&response)
+	return response, err
+
+}
+
+//
+// Multi-Purpose Encoders
+// The following encoders are used either by a server or a client (this should be specified on the function).
+// Since the API is largely JSON based once a request or response is "generic enough" to be encoded as JSON there
+// is no reason to copy and paste the EXACT same code over and over.
+//
+
 // encodeJSONRequest is responsible for writing information into a request via a pointer.
 // It writes information relating to the passed in request to a JSON body.
 // Useful for HTTP request types which carry a body.
@@ -396,4 +476,71 @@ func encodeJSONRequest(ctx context.Context, req *http.Request, request interface
 
 	// Return a nil error value
 	return nil
+}
+
+type errorer interface {
+	error() error
+}
+
+// encodeResponse, once a request has been fully executed and the response has been created a GoKit server response
+// encoder will be invoked (by GoKit). These encoders will write to a a ResponseWriter entity.
+func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+
+	// Attempt to assert that the response recieved from the server endpoint function implements the errorer interface
+	// If it does set `err` equal to that value (that value being the value that has an error func) and `ok` to true.
+	err, ok := response.(errorer)
+
+	// Check to see if `ok` is true AND the implementer of errorer has an error func that returns a non-nil value
+	if (ok) && (err.error() != nil) {
+
+		// Pass the error value to the encode error function along with the `ResponseWriter`.
+		// This will allow encodeError to finish the request lifecycle.
+		encodeError(ctx, err.error(), w)
+
+		// Return a nil error value to the caller
+		return nil
+	}
+
+	// On the response writer create a header value informing the consumer that the message being carried is of type JSON
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	// Return the error value created by attempting to write the response value (interface{} / map[string]interface{})
+	// to a JSON I/O encoder.
+	return json.NewEncoder(w).Encode(response)
+}
+
+// encodeError accepts a value of type Context, an error, and a http.ResponseWriter.
+// It has no return value.
+func encodeError(ctx context.Context, err error, w http.ResponseWriter) {
+
+	// Check to see if the error passed in was nil
+	if err == nil {
+
+		// panic!
+		panic("cannot encode a nil error value")
+	}
+
+	// Set a header informing the consumer that the response they are about to receive is JSON
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	// Set the status for the error based on the result of passing the `err` value to `codeFrom`
+	w.WriteHeader(codeFrom(err))
+
+	// Encode a JSON parsable type of `map[string]interface{}` with a single error field whose value is set to
+	// the return value from calling the error interface Error func into the ResponseWriter passed in.
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"error": err.Error(),
+	})
+}
+
+// codeFrom is a wrapper around a switch statement that provide HTTP status code based on user created err types.
+func codeFrom(err error) {
+	switch err {
+	case ErrNotFound:
+		return http.StatusNotFound
+	case ErrAlreadyExists, ErrInconsistentIDs:
+		return http.StatusBadRequest
+	default:
+		return http.StatusInternalServerError
+	}
 }
