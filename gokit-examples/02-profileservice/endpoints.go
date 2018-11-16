@@ -216,6 +216,10 @@ func (e Endpoints) GetAddresses(ctx context.Context, profileID string) ([]Addres
 
 	response, err := e.GetAddressesEndpoint(ctx, request)
 
+	if err != nil {
+		return []Address{}, nil
+	}
+
 	resp := response.(getAddressesResponse)
 
 	return resp.Addresses, resp.Err
@@ -253,7 +257,9 @@ func (e Endpoints) PostAddress(ctx context.Context, profileID string, a Address)
 		return err
 	}
 
-	return err
+	resp := response.(postAddressResponse)
+
+	return resp.Err
 }
 
 // DeleteAddress is a function that accepts a Context, a profileID string, and an addressID string.
@@ -282,7 +288,7 @@ func MakePostProfileEndpoint(s Service) endpoint.Endpoint {
 		// Initialize a variable e (short for error because GoLang).
 		// It is set by calling the passed in Service's PostProfile function
 		// Keeping in line with Service interface the PostProfile method accepts the context and request that were passed in.
-		e := s.PostProfile(ctx, req)
+		e := s.PostProfile(ctx, req.Profile)
 
 		// Return a struct literal of type postProfileResponse whose Err field is set to `e`, the error we got back from the Service call.
 		return postProfileResponse{Err: e}, nil
@@ -294,7 +300,7 @@ func MakeGetProfileEndpoint(s Service) endpoint.Endpoint {
 	// TODO: Create detailed ref spec
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getProfileRequest)
-		p, e := s.GetProfile(ctx, req.ID)
+		p, e := s.GetProfile(ctx, req.ProfileID)
 		return getProfileResponse{Profile: p, Err: e}, nil
 	}
 }
@@ -304,8 +310,8 @@ func MakePutProfileEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		// TODO: Create detailed ref spec
 		req := request.(putProfileRequest)
-		e := s.PutProfile(ctx, req)
-		return putProfileResponse{Err: e}
+		e := s.PutProfile(ctx, req.ProfileID, req.Profile)
+		return putProfileResponse{Err: e}, nil
 	}
 }
 
@@ -314,8 +320,8 @@ func MakePatchProfileEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		// TODO: Create detailed ref spec
 		req := request.(patchProfileRequest)
-		e := s.PatchProfile(ctx, req)
-		return patchProfileResponse{Err: e}
+		e := s.PatchProfile(ctx, req.ProfileID, req.Profile)
+		return patchProfileResponse{Err: e}, nil
 	}
 }
 
@@ -331,7 +337,7 @@ func MakeDeleteProfileEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteProfileRequest)
 		e := s.DeleteProfile(ctx, req.ProfileID)
-		return deleteProfileResponse{Err: e}
+		return deleteProfileResponse{Err: e}, nil
 	}
 }
 
@@ -450,8 +456,7 @@ type postAddressRequest struct {
 }
 
 type postAddressResponse struct {
-	Err     error   `json:"err,omitempty"`
-	Address Address `json:"address,omitempty"`
+	Err error `json:"err,omitempty"`
 }
 
 type deleteAddressRequest struct {
